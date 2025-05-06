@@ -3,6 +3,13 @@ DerivedDataCache
 Intermediate
 Saved
 Build
+*/Assets/
+*/Audio/
+*/Destructibles/
+*/Mixmo/
+*/Stylized_Egypt/
+*/ParagonMinions/
+
 
 .vscode
 .vs
