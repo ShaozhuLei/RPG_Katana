@@ -33,6 +33,7 @@ AEnemy::AEnemy()
 void AEnemy::BeginPlay()
 {
 	Super::BeginPlay();
+	if (HealthBarComponent) HealthBarComponent->SetVisibility(false);
 	
 }
 
@@ -92,8 +93,8 @@ void AEnemy::Die()
 {
 	//移除对刀的Box碰撞
 	GetMesh()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
-	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_WorldDynamic, ECR_Ignore);
+	GetCapsuleComponent()->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	SetLifeSpan(3.f);
 	//计算往哪个方向"死"
 	int32 MontageIndex = 1;
 	float Theta = FVector::DotProduct(CombatTarget->GetActorForwardVector(), GetActorForwardVector());
@@ -165,6 +166,8 @@ float AEnemy::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEv
 
 void AEnemy::GetHit_Implementation(const FVector& ImpactPoint)
 {
+	if (HealthBarComponent) HealthBarComponent->SetVisibility(true);
+	
 	if (AttributeComponent->bIsAlive())
 	{
 		DirectionalHitReact(ImpactPoint);

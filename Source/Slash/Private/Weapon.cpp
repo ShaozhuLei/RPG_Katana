@@ -50,68 +50,66 @@ void AWeapon::OnSphereEndOverlap(UPrimitiveComponent* OverlappedComponent, AActo
 
 void AWeapon::OnBoxOverlap(UPrimitiveComponent* OverlappedComponent, AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
-	if (Cast<AEnemy>(OtherActor) != nullptr)
+	if (OtherActor == this || OtherActor == GetOwner()) return;
+
+	const FVector Start = StartLocation->GetComponentLocation();
+	const FVector End = EndLocation->GetComponentLocation();
+
+	TArray<AActor*> ActorsToIgnore;
+
+	for (AActor* Actor : IgnoreActors)
 	{
-		//if (OtherActor == this || OtherActor == GetOwner()) return;
-	
-		const FVector Start = StartLocation->GetComponentLocation();
-		const FVector End = EndLocation->GetComponentLocation();
-
-		TArray<AActor*> ActorsToIgnore;
-
-		for (AActor* Actor : IgnoreActors)
-		{
-			ActorsToIgnore.AddUnique(Actor);
-		}
-
-		ActorsToIgnore.Add(GetOwner());
-	
-		FHitResult BoxHit;
-	
-		bool bIsHit = UKismetSystemLibrary::BoxTraceSingle(
-			 this,
-			 Start,
-			 End,
-			 FVector(20.f, 80.f, 20.f),
-			 StartLocation->GetComponentRotation(),
-			 ETraceTypeQuery::TraceTypeQuery1,
-			 false,
-			 ActorsToIgnore,
-			 EDrawDebugTrace::ForDuration,
-			 BoxHit,
-			 true
-		 );
-
-		if (BoxHit.GetActor())
-		{
-			GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Cyan, FString::Printf(TEXT("%s"), *BoxHit.GetActor()->GetName()));
-		}
-		else
-		{
-			GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Cyan, TEXT("No Hit"));
-		}
-	
-	
-		if (AActor* Target = BoxHit.GetActor())
-		{
-			float DamageNum = UGameplayStatics::ApplyDamage(
-				Target,
-				Damage,
-				GetInstigator()->GetController(),
-				this,
-				UDamageType::StaticClass());
-		
-		
-			if (Target->Implements<UHitInterfaces>())
-			{
-				IHitInterfaces::Execute_GetHit(Target, BoxHit.ImpactPoint);
-			}
-			IgnoreActors.AddUnique(Target);
-		
-			CreateFields(BoxHit.ImpactPoint);
-		
-		}
+		ActorsToIgnore.AddUnique(Actor);
 	}
+
+	ActorsToIgnore.Add(GetOwner());
+
+	FHitResult BoxHit;
+
+	bool bIsHit = UKismetSystemLibrary::BoxTraceSingle(
+		 this,
+		 Start,
+		 End,
+		 FVector(20.f, 80.f, 20.f),
+		 StartLocation->GetComponentRotation(),
+		 ETraceTypeQuery::TraceTypeQuery1,
+		 false,
+		 ActorsToIgnore,
+		 EDrawDebugTrace::ForDuration,
+		 BoxHit,
+		 true
+	 );
+
+	if (BoxHit.GetActor())
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Cyan, FString::Printf(TEXT("%s"), *BoxHit.GetActor()->GetName()));
+	}
+	else
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Cyan, TEXT("No Hit"));
+	}
+
+
+	if (AActor* Target = BoxHit.GetActor())
+	{
+		float DamageNum = UGameplayStatics::ApplyDamage(
+			Target,
+			Damage,
+			GetInstigator()->GetController(),
+			this,
+			UDamageType::StaticClass());
+	
+	
+		if (Target->Implements<UHitInterfaces>())
+		{
+			IHitInterfaces::Execute_GetHit(Target, BoxHit.ImpactPoint);
+		}
+		IgnoreActors.AddUnique(Target);
+	
+		CreateFields(BoxHit.ImpactPoint);
+	
+	}
+	
 	
 }
 

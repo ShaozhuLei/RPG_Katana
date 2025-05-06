@@ -7,6 +7,7 @@
 #include "Interfaces/HitInterfaces.h"
 #include "BreakableActor.generated.h"
 
+class UCapsuleComponent;
 class UGeometryCollectionComponent;
 
 UCLASS()
@@ -23,6 +24,9 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	TObjectPtr<UCapsuleComponent> CapsuleComponent;
 
 private:
 	

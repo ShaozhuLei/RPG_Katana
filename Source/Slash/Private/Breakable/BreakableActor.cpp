@@ -2,6 +2,9 @@
 
 
 #include "Breakable/BreakableActor.h"
+
+#include "Components/CapsuleComponent.h"
+#include "Components/SphereComponent.h"
 #include "GeometryCollection/GeometryCollectionComponent.h"
 
 // Sets default values
@@ -15,8 +18,13 @@ ABreakableActor::ABreakableActor()
 
 	GeometryCollectionComponent->SetGenerateOverlapEvents(true);
 	GeometryCollectionComponent->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
-	
+	GeometryCollectionComponent->SetCollisionResponseToChannel(ECC_Pawn, ECR_Ignore);
 
+	CapsuleComponent = CreateDefaultSubobject<UCapsuleComponent>("Sphere Component");
+	CapsuleComponent->SetupAttachment(GetRootComponent());
+	CapsuleComponent->SetCollisionResponseToAllChannels(ECR_Ignore);
+	CapsuleComponent->SetCollisionResponseToChannel(ECC_Pawn, ECR_Block);
+	
 }
 
 void ABreakableActor::GetHit_Implementation(const FVector& ImpactPoint)
