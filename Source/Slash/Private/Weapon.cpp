@@ -75,21 +75,11 @@ void AWeapon::OnBoxOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Oth
 		 ETraceTypeQuery::TraceTypeQuery1,
 		 false,
 		 ActorsToIgnore,
-		 EDrawDebugTrace::ForDuration,
+		 EDrawDebugTrace::None,
 		 BoxHit,
 		 true
 	 );
-
-	if (BoxHit.GetActor())
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Cyan, FString::Printf(TEXT("%s"), *BoxHit.GetActor()->GetName()));
-	}
-	else
-	{
-		GEngine->AddOnScreenDebugMessage(-1, 3.f, FColor::Cyan, TEXT("No Hit"));
-	}
-
-
+	
 	if (AActor* Target = BoxHit.GetActor())
 	{
 		float DamageNum = UGameplayStatics::ApplyDamage(

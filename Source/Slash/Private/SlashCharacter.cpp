@@ -27,6 +27,21 @@ ASlashCharacter::ASlashCharacter()
 	
 }
 
+// Called when the game starts or when spawned
+void ASlashCharacter::BeginPlay()
+{
+	Super::BeginPlay();
+	if (APlayerController* PlayerController = Cast<APlayerController>(GetController()))
+	{
+		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
+		{
+			Subsystem->AddMappingContext(SlashMappingContext, 0);
+		}
+	}
+	Tags.Add(FName("SlashCharacter"));
+	
+}
+
 void ASlashCharacter::Move(const FInputActionValue& InputActionValue)
 {
 	const FVector2d MovementVector = InputActionValue.Get<FVector2d>();
@@ -114,19 +129,7 @@ void ASlashCharacter::PlayAttackMontage()
 	}
 }
 
-// Called when the game starts or when spawned
-void ASlashCharacter::BeginPlay()
-{
-	Super::BeginPlay();
-	if (APlayerController* PlayerController = Cast<APlayerController>(GetController()))
-	{
-		if (UEnhancedInputLocalPlayerSubsystem* Subsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(PlayerController->GetLocalPlayer()))
-		{
-			Subsystem->AddMappingContext(SlashMappingContext, 0);
-		}
-	}
-	
-}
+
 
 void ASlashCharacter::AttackEnd()
 {

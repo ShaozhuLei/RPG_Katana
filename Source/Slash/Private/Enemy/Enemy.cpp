@@ -3,17 +3,24 @@
 
 #include "Enemy/Enemy.h"
 
+#include "AIController.h"
+#include "VectorTypes.h"
 #include "Components/AttributeComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SphereComponent.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "HUD/HealthBarComponent.h"
+#include "Navigation/PathFollowingComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "Perception/PawnSensingComponent.h"
 
 // Sets default values
 AEnemy::AEnemy()
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = false;
+	PrimaryActorTick.bCanEverTick = true;
+
+	GetCharacterMovement()->bOrientRotationToMovement = true;
 
 	GetMesh()->SetCollisionObjectType(ECC_WorldDynamic);
 	GetMesh()->SetCollisionResponseToChannel(ECC_Visibility, ECR_Block);
@@ -23,10 +30,11 @@ AEnemy::AEnemy()
 	GetCapsuleComponent()->SetCollisionResponseToChannel(ECC_Camera, ECR_Ignore);
 
 	HealthBarComponent = CreateDefaultSubobject<UHealthBarComponent>("Health Bar Component");
-	
 	HealthBarComponent->SetupAttachment(GetRootComponent());
-	
 
+	PawnSensingComponent = CreateDefaultSubobject<UPawnSensingComponent>("SensingComponent");
+	PawnSensingComponent->SightRadius = 4000.f;
+	PawnSensingComponent->SetPeripheralVisionAngle(45.f);
 }
 
 // Called when the game starts or when spawned
@@ -34,6 +42,51 @@ void AEnemy::BeginPlay()
 {
 	Super::BeginPlay();
 	if (HealthBarComponent) HealthBarComponent->SetVisibility(false);
+
+	if (PawnSensingComponent) PawnSensingComponent->OnSeePawn.AddDynamic(this, &AEnemy::OnSeen);
+
+	EnemyController = Cast<AAIController>(GetController());
+
+	MoveToTarget(PatrolTarget);
+}
+
+//到巡逻点后，前往下一个巡逻点
+void AEnemy::CheckPatrolTarget()
+{
+	if (InTargetRange(PatrolTarget, PatrolRadius))
+	{
+		PatrolTarget = ChoosePatrolTarget();
+		const float WaitTime = FMath::RandRange(WaitMin, WaitMax);
+		GetWorldTimerManager().SetTimer(PatrolTimer, this, &AEnemy::PatrolTimerFinished, WaitTime);
+	}
+	
+}
+
+//若玩家离开一定范围，则丢失目标
+void AEnemy::CheckCombatTarget()
+{
+	if (!InTargetRange(CombatTarget, PatrolRadius))
+	{
+		//若丢失目标
+		CombatTarget = nullptr;
+		//if (HealthBarComponent) HealthBarComponent->SetVisibility(false);
+		EnemyState = EEnemyState::EES_Patrolling;
+		GetCharacterMovement()->MaxWalkSpeed = 130.f;
+		MoveToTarget(PatrolTarget);
+	}
+	else if (!InTargetRange(CombatTarget, AttackRadius) && EnemyState != EEnemyState::EES_Chasing)
+	{
+		//在巡逻范围 但 不在攻击范围
+		EnemyState = EEnemyState::EES_Chasing;
+		GetCharacterMovement()->MaxWalkSpeed = 440.f;
+		MoveToTarget(CombatTarget);
+	}
+	else if (InTargetRange(CombatTarget, AttackRadius) && EnemyState != EEnemyState::EES_Attacking)
+	{
+		//在攻击范围内
+		EnemyState = EEnemyState::EES_Attacking;
+		
+	}
 	
 }
 
@@ -89,6 +142,42 @@ void AEnemy::DirectionalHitReact(const FVector& ImpactPoint)
 	PlayHitReactMontage(MontageSection);
 }
 
+bool AEnemy::InTargetRange(AActor* Target, float Range)
+{
+	if (Target == nullptr) return false;
+	const float DistanceToTarget = (Target->GetActorLocation() - GetActorLocation()).Size();
+
+	return DistanceToTarget <= Range;
+}
+
+void AEnemy::MoveToTarget(AActor* Target)
+{
+	if (EnemyController == nullptr || Target == nullptr) return;
+	FAIMoveRequest MoveRequest;
+	MoveRequest.SetGoalActor(Target);
+	MoveRequest.SetAcceptanceRadius(15.f);
+	EnemyController->MoveTo(MoveRequest);
+}
+
+AActor* AEnemy::ChoosePatrolTarget()
+{
+	TArray<AActor*> ValidTargets;
+	for (AActor* Target: PatrolTargets)
+	{
+		if (Target != PatrolTarget)
+		{
+			ValidTargets.AddUnique(Target);
+		}
+	}
+	const int32 NumPatrolTargets = ValidTargets.Num();
+	if (NumPatrolTargets > 0)
+	{
+		const int32 TargetSelection = FMath::RandRange(0, NumPatrolTargets - 1);
+		return ValidTargets[TargetSelection];
+	}
+	return nullptr;
+}
+
 void AEnemy::Die()
 {
 	//移除对刀的Box碰撞
@@ -136,11 +225,51 @@ void AEnemy::Die()
 	PlayAnimMontage(DeathMontage, 1, MontageSection);
 }
 
+void AEnemy::OnSeen(APawn* InPawn)
+{
+	//没在巡逻的话 return
+	if (EnemyState > EEnemyState::EES_Patrolling) return;
+	
+	if (InPawn->ActorHasTag(FName("SlashCharacter")))
+	{
+		EnemyState = EEnemyState::EES_Chasing;
+		GetWorldTimerManager().ClearTimer(PatrolTimer);
+		GetCharacterMovement()->MaxWalkSpeed = 440.f;
+		CombatTarget = InPawn;
+		MoveToTarget(CombatTarget);
+
+		if (EnemyState != EEnemyState::EES_Attacking)
+		{
+			EnemyState = EEnemyState::EES_Chasing;
+			MoveToTarget(CombatTarget);
+		}
+	}
+		
+	
+}
+
+void AEnemy::PatrolTimerFinished()
+{
+	MoveToTarget(PatrolTarget);
+}
+
 // Called every frame
 void AEnemy::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
+	
+	//时刻检查此时是否在巡逻
+	if (EnemyState > EEnemyState::EES_Patrolling)
+	{
+		CheckCombatTarget();
+	}
+	else
+	{
+		CheckPatrolTarget();
+	}
+	
+	
+	
 }
 
 // Called to bind functionality to input
@@ -158,8 +287,11 @@ float AEnemy::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEv
 		HealthBarComponent->SetHealthPercent(AttributeComponent->ReturnPercentageHealth());
 	}
 	CombatTarget = EventInstigator->GetPawn();
+	EnemyState = EEnemyState::EES_Chasing;
+	GetCharacterMovement()->MaxWalkSpeed = 440.f;
+	MoveToTarget(CombatTarget);
 	
-	return 0;
+	return DamageAmount;
 }
 
 
