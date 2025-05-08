@@ -48,9 +48,9 @@ public:
 	void Look(const FInputActionValue& InputActionValue);
 	void PickWeapon();
 	void HoldWeapon();
-	void Attack();
+	virtual void Attack() override;
 
-	void PlayAttackMontage();
+	virtual void PlayAttackMontage() override;
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
@@ -64,16 +64,14 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-
-	UPROPERTY(EditDefaultsOnly, Category="Montages")
-	TObjectPtr<UAnimMontage> AttackMontage;
+	
 
 	UPROPERTY(EditDefaultsOnly, Category="Montages")
 	TObjectPtr<UAnimMontage> EquipMontage;
 
 	UFUNCTION(BlueprintCallable)
-	void AttackEnd();
-	bool CanAttack();
+	virtual void AttackEnd() override;
+	virtual bool CanAttack() override;
 
 	void PlayEquipMontage(const FName& MontageName);
 	bool CanDisarm();
@@ -87,9 +85,7 @@ protected:
 
 	UFUNCTION(BlueprintCallable)
 	void FinishedEquipping();
-
-	UFUNCTION(BlueprintCallable)
-	void EnableBoxCollision();
+	
 
 	UFUNCTION(BlueprintCallable)
 	void DisableBoxCollision();
@@ -109,8 +105,6 @@ private:
 	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = true))
 	EActionState ActionState = EActionState::EAS_Unoccupied;
 	
-	UPROPERTY(VisibleAnywhere, Category="Weapon")
-	TObjectPtr<AWeapon> EquippedWeapon;
 	
 
 };

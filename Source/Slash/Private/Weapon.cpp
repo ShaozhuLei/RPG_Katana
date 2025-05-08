@@ -15,7 +15,7 @@ AWeapon::AWeapon()
 {
 	//PrimaryActorTick.bCanEverTick = true;
 	WeaponBox = CreateDefaultSubobject<UBoxComponent>("Weapon Box");
-	WeaponBox->SetupAttachment(MeshComp);
+	WeaponBox->SetupAttachment(ItemMesh);
 
 	WeaponBox->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	WeaponBox->SetCollisionResponseToAllChannels(ECR_Overlap);
@@ -23,10 +23,10 @@ AWeapon::AWeapon()
 	
 
 	StartLocation = CreateDefaultSubobject<USceneComponent>("Start Location");
-	StartLocation->SetupAttachment(MeshComp);
+	StartLocation->SetupAttachment(ItemMesh);
 
 	EndLocation = CreateDefaultSubobject<USceneComponent>("End Location");
-	EndLocation->SetupAttachment(MeshComp);
+	EndLocation->SetupAttachment(ItemMesh);
 	
 }
 
@@ -99,15 +99,13 @@ void AWeapon::OnBoxOverlap(UPrimitiveComponent* OverlappedComponent, AActor* Oth
 		CreateFields(BoxHit.ImpactPoint);
 	
 	}
-	
-	
 }
 
 
 void AWeapon::AttachMeshToSocket(USceneComponent* InParent, FName InSocketName)
 {
 	FAttachmentTransformRules AttachmentTransformRules(EAttachmentRule::SnapToTarget, true);
-	MeshComp->AttachToComponent(InParent, AttachmentTransformRules, InSocketName);
+	ItemMesh->AttachToComponent(InParent, AttachmentTransformRules, InSocketName);
 }
 
 

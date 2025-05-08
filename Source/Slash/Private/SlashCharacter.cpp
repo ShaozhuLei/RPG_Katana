@@ -42,6 +42,18 @@ void ASlashCharacter::BeginPlay()
 	
 }
 
+void ASlashCharacter::AttackEnd()
+{
+	ActionState = EActionState::EAS_Unoccupied;
+}
+
+bool ASlashCharacter::CanAttack()
+{
+	if (ActionState != EActionState::EAS_Unoccupied || CharacterState == ECharacterState::ECS_Unequipped || CharacterState == ECharacterState::ECS_EquippedOnBack) return false;
+	
+	return true;
+}
+
 void ASlashCharacter::Move(const FInputActionValue& InputActionValue)
 {
 	const FVector2d MovementVector = InputActionValue.Get<FVector2d>();
@@ -129,25 +141,13 @@ void ASlashCharacter::PlayAttackMontage()
 	}
 }
 
-
-
-void ASlashCharacter::AttackEnd()
-{
-	ActionState = EActionState::EAS_Unoccupied;
-}
-
-bool ASlashCharacter::CanAttack()
-{
-	if (ActionState != EActionState::EAS_Unoccupied || CharacterState == ECharacterState::ECS_Unequipped || CharacterState == ECharacterState::ECS_EquippedOnBack) return false;
-	
-	return true;
-}
-
 void ASlashCharacter::PlayEquipMontage(const FName& MontageName)
 {
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
 	if (EquipMontage)
 	{
-		PlayAnimMontage(EquipMontage, 1, MontageName);
+		AnimInstance->Montage_Play(EquipMontage);
+		AnimInstance->Montage_JumpToSection(MontageName);
 	}
 }
 
@@ -177,14 +177,6 @@ void ASlashCharacter::FinishedEquipping()
 	ActionState = EActionState::EAS_Unoccupied;
 }
 
-void ASlashCharacter::EnableBoxCollision()
-{
-	if (EquippedWeapon && EquippedWeapon->GetBoxComponent())
-	{
-		EquippedWeapon->GetBoxComponent()->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
-		EquippedWeapon->IgnoreActors.Empty();
-	}
-}
 
 void ASlashCharacter::DisableBoxCollision()
 {

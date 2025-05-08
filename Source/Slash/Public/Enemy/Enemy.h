@@ -35,23 +35,18 @@ public:
 
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
-
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-	
 	virtual void GetHit_Implementation(const FVector& ImpactPoint) override;
-
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
+	virtual void Destroyed() override;
 
 	
 	
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-
-	void PlayHitReactMontage(const FName& SectionName);
-
-	void DirectionalHitReact(const FVector& ImpactPoint);
+	
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
 	TObjectPtr<UHealthBarComponent> HealthBarComponent;
@@ -63,6 +58,9 @@ protected:
 
 	void Die();
 
+	virtual void Attack() override;
+	virtual void PlayAttackMontage() override;
+
 	UFUNCTION()
 	void OnSeen(APawn* InPawn);
 
@@ -71,14 +69,18 @@ private:
 	/**
 	* Animation montages
 	*/
-	UPROPERTY(EditDefaultsOnly, Category = Montages)
-	UAnimMontage* HitReactMontage;
 
 	UPROPERTY(EditDefaultsOnly, Category = Montages)
 	UAnimMontage* DeathMontage;
 
 	UPROPERTY(EditAnywhere, Category = Sound)
 	USoundBase* HitSound;
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class AWeapon> WeaponClassR;
+
+	UPROPERTY(EditAnywhere)
+	TSubclassOf<class AWeapon> WeaponClassL;
 
 	UPROPERTY(EditAnywhere, Category = VisualEffects)
 	UParticleSystem* HitParticles;

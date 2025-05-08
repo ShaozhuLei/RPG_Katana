@@ -6,6 +6,7 @@
 #include "GameFramework/Character.h"
 #include "CharacterBase.generated.h"
 
+class AWeapon;
 class UAttributeComponent;
 
 UCLASS()
@@ -17,16 +18,39 @@ public:
 	// Sets default values for this character's properties
 	ACharacterBase();
 
+	UFUNCTION(BlueprintCallable)
+	void SetWeaponCollisionEnabled(ECollisionEnabled::Type CollisionEnabled);
+
+	// Called to bind functionality to input
+	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
+
+	void DirectionalHitReact(const FVector& ImpactPoint);
+
+	virtual void PlayAttackMontage();
+	virtual void Attack();
+	virtual void AttackEnd();
+	virtual bool CanAttack();
 	
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<UAttributeComponent> AttributeComponent;
-
-public:	
 	
-	// Called to bind functionality to input
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	UPROPERTY(EditDefaultsOnly, Category="Montages")
+	TObjectPtr<UAnimMontage> AttackMontage;
 
+	UPROPERTY(VisibleAnywhere, Category="Weapon")
+	TObjectPtr<AWeapon> EquippedWeapon;
+
+	void PlayHitReactMontage(const FName& SectionName);
+
+	UPROPERTY(EditDefaultsOnly, Category="Montages")
+	float AttackMontagePlatRate = 1;
+	
+	
+
+private:
+	UPROPERTY(EditDefaultsOnly, Category = Montages)
+	UAnimMontage* HitReactMontage;
 };

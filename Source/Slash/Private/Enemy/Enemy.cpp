@@ -5,6 +5,7 @@
 
 #include "AIController.h"
 #include "VectorTypes.h"
+#include "Weapon.h"
 #include "Components/AttributeComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/SphereComponent.h"
@@ -43,11 +44,24 @@ void AEnemy::BeginPlay()
 	Super::BeginPlay();
 	if (HealthBarComponent) HealthBarComponent->SetVisibility(false);
 
-	if (PawnSensingComponent) PawnSensingComponent->OnSeePawn.AddDynamic(this, &AEnemy::OnSeen);
-
 	EnemyController = Cast<AAIController>(GetController());
 
 	MoveToTarget(PatrolTarget);
+
+	if (PawnSensingComponent) PawnSensingComponent->OnSeePawn.AddDynamic(this, &AEnemy::OnSeen);
+
+	UWorld* World = GetWorld();
+	if (World && WeaponClassR)
+	{
+		AWeapon* DefaultWeapon = World->SpawnActor<AWeapon>(WeaponClassR);
+		DefaultWeapon->Equip(GetMesh(), FName("RightHandSocket"), this, this);
+	}
+
+	if (World && WeaponClassL)
+	{
+		AWeapon* DefaultWeapon = World->SpawnActor<AWeapon>(WeaponClassL);
+		DefaultWeapon->Equip(GetMesh(), FName("LeftHandSocket"), this, this);
+	}
 }
 
 //到巡逻点后，前往下一个巡逻点
@@ -73,6 +87,7 @@ void AEnemy::CheckCombatTarget()
 		EnemyState = EEnemyState::EES_Patrolling;
 		GetCharacterMovement()->MaxWalkSpeed = 130.f;
 		MoveToTarget(PatrolTarget);
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Cyan, TEXT("Lose Interest"));
 	}
 	else if (!InTargetRange(CombatTarget, AttackRadius) && EnemyState != EEnemyState::EES_Chasing)
 	{
@@ -80,67 +95,18 @@ void AEnemy::CheckCombatTarget()
 		EnemyState = EEnemyState::EES_Chasing;
 		GetCharacterMovement()->MaxWalkSpeed = 440.f;
 		MoveToTarget(CombatTarget);
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Cyan, TEXT("Chase Player"));
 	}
 	else if (InTargetRange(CombatTarget, AttackRadius) && EnemyState != EEnemyState::EES_Attacking)
 	{
 		//在攻击范围内
 		EnemyState = EEnemyState::EES_Attacking;
-		
+		Attack();
+		GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Cyan, TEXT("Attack"));
 	}
 	
 }
 
-void AEnemy::PlayHitReactMontage(const FName& SectionName)
-{
-	if (HitReactMontage)
-	{
-		PlayAnimMontage(HitReactMontage, 1, SectionName);
-	}
-	
-}
-
-void AEnemy::DirectionalHitReact(const FVector& ImpactPoint)
-{
-	APawn* PlayerPawn = UGameplayStatics::GetPlayerPawn(GetWorld(), 0);
-	FVector PawnLocation = PlayerPawn->GetActorLocation();
-	
-	const FVector Forward = GetActorForwardVector();
-	const FVector HitPoint = (PawnLocation - GetActorLocation()).GetSafeNormal();
-
-	float CosinTheta = FVector::DotProduct(Forward, HitPoint);
-	//cos theta 转成 Radian
-	float Theta = FMath::Acos(CosinTheta);
-	//Radian To Degree
-	Theta = FMath::RadiansToDegrees(Theta);
-	
-	FVector CrossProduct = FVector::CrossProduct(Forward, HitPoint);
-
-	if (CrossProduct.Z < 0.0f)
-	{
-		Theta *= -1.f;
-	}
-
-	FName MontageSection = FName();
-
-	if (Theta >= -45.f && Theta < 45.f)
-	{
-		MontageSection = "HitFront";
-	}
-	else if (Theta >= 45.f && Theta < 135.f)
-	{
-		MontageSection = "HitRight";
-	}
-	else if (Theta >= -135.f && Theta < -45.f)
-	{
-		MontageSection = "HitLeft";
-	}
-	else
-	{
-		MontageSection = "HitBack";
-	}
-	
-	PlayHitReactMontage(MontageSection);
-}
 
 bool AEnemy::InTargetRange(AActor* Target, float Range)
 {
@@ -225,6 +191,44 @@ void AEnemy::Die()
 	PlayAnimMontage(DeathMontage, 1, MontageSection);
 }
 
+void AEnemy::Attack()
+{
+	PlayAttackMontage();
+}
+
+void AEnemy::PlayAttackMontage()
+{
+	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Cyan, TEXT("Attack Montage"));
+	UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance();
+	if (AnimInstance && AttackMontage)
+	{
+		AnimInstance->Montage_Play(AttackMontage, AttackMontagePlatRate);
+		const int32 RandNum = FMath::RandRange(0, 2);
+		FName SectionName = FName();
+
+		switch (RandNum)
+		{
+		case 0:
+			SectionName = "Attack1";
+			break;
+
+		case 1:
+			SectionName = "Attack2";
+			break;
+
+		case 2:
+			SectionName = "Attack3";
+			break;
+
+		default:
+			SectionName = FName();
+		}
+
+		AnimInstance->Montage_JumpToSection(SectionName);
+	}
+	
+}
+
 void AEnemy::OnSeen(APawn* InPawn)
 {
 	//没在巡逻的话 return
@@ -232,11 +236,9 @@ void AEnemy::OnSeen(APawn* InPawn)
 	
 	if (InPawn->ActorHasTag(FName("SlashCharacter")))
 	{
-		EnemyState = EEnemyState::EES_Chasing;
 		GetWorldTimerManager().ClearTimer(PatrolTimer);
 		GetCharacterMovement()->MaxWalkSpeed = 440.f;
 		CombatTarget = InPawn;
-		MoveToTarget(CombatTarget);
 
 		if (EnemyState != EEnemyState::EES_Attacking)
 		{
@@ -294,6 +296,13 @@ float AEnemy::TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEv
 	return DamageAmount;
 }
 
+void AEnemy::Destroyed()
+{
+	if (EquippedWeapon)
+	{
+		EquippedWeapon->Destroy();
+	}
+}
 
 
 void AEnemy::GetHit_Implementation(const FVector& ImpactPoint)
