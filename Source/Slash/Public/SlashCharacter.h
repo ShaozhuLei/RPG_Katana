@@ -6,22 +6,29 @@
 #include "InputMappingContext.h"
 #include "Characters/CharaterTypes.h"
 #include "Characters/CharacterBase.h"
+#include "Interfaces/HitInterfaces.h"
+#include "Interfaces/PickupInterface.h"
 #include "SlashCharacter.generated.h"
 
 
+class USlashOverlay;
 class AWeapon;
 class AItem;
 class UCameraComponent;
 class USpringArmComponent;
 
 UCLASS()
-class SLASH_API ASlashCharacter : public ACharacterBase
+class SLASH_API ASlashCharacter : public ACharacterBase, public IPickupInterface
 {
 	GENERATED_BODY()
 
 public:
 	// Sets default values for this character's properties
 	ASlashCharacter();
+
+	virtual void GetHit_Implementation(const FVector& ImpactPoint, AActor* SourceActor) override;
+	
+	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
 
 	UPROPERTY(EditAnywhere, Category="Input")
 	TObjectPtr<UInputAction> MoveAction;
@@ -31,6 +38,9 @@ public:
 
 	UPROPERTY(EditAnywhere, Category="Input")
 	TObjectPtr<UInputAction> JumpAction;
+
+	UPROPERTY(EditAnywhere, Category="Input")
+	TObjectPtr<UInputAction> DodgeAction;
 
 	UPROPERTY(EditAnywhere, Category="Input")
 	TObjectPtr<UInputAction> EKeyPressed;
@@ -46,20 +56,26 @@ public:
 	
 	void Move(const FInputActionValue& InputActionValue);
 	void Look(const FInputActionValue& InputActionValue);
+	void Dodge(const FInputActionValue& InputActionValue);
 	void PickWeapon();
 	void HoldWeapon();
 	virtual void Attack() override;
-
-	virtual void PlayAttackMontage() override;
-
+	virtual void Die() override;
+	virtual void Jump() override;
+	virtual void RollStart() override;
+	virtual void RollEnd() override;
+	/**Pickup Interface*/
+	virtual void SetOverlappingItem_Implementation(AItem* Item) override;
+	virtual void AddSouls_Implementation(ASoul* Soul) override;
+	virtual void AddGold_Implementation(AGold* Gold) override;
+	/**Pickup Interface end*/
+	
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-
-	FORCEINLINE void SetOverlappingItem(AItem* Item){OverlappingItem = Item;}
-
+	
 	FORCEINLINE ECharacterState GetCharacterState() const { return CharacterState; }
-
 	FORCEINLINE EActionState GetActionState() const { return ActionState; }
+	
 
 protected:
 	// Called when the game starts or when spawned
@@ -68,8 +84,7 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category="Montages")
 	TObjectPtr<UAnimMontage> EquipMontage;
-
-	UFUNCTION(BlueprintCallable)
+	
 	virtual void AttackEnd() override;
 	virtual bool CanAttack() override;
 
@@ -86,11 +101,16 @@ protected:
 	UFUNCTION(BlueprintCallable)
 	void FinishedEquipping();
 	
-
 	UFUNCTION(BlueprintCallable)
 	void DisableBoxCollision();
 
+	UFUNCTION(BlueprintCallable)
+	void HitReactionEnd();
+
 private:
+
+	void InitializeSlashOverlay();
+	
 	UPROPERTY(VisibleAnywhere)
 	USpringArmComponent* CameraBoom;
  
@@ -100,13 +120,16 @@ private:
 	UPROPERTY(VisibleAnywhere)
 	AItem* OverlappingItem;
 
+	UPROPERTY()
+	USlashOverlay* SlashOverlay;
+
 	ECharacterState CharacterState = ECharacterState::ECS_Unequipped;
 
 	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = true))
 	EActionState ActionState = EActionState::EAS_Unoccupied;
-	
-	
 
 };
+
+
 
 

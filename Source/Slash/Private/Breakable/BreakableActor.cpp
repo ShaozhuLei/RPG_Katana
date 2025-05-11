@@ -4,7 +4,6 @@
 #include "Breakable/BreakableActor.h"
 
 #include "Components/CapsuleComponent.h"
-#include "Components/SphereComponent.h"
 #include "GeometryCollection/GeometryCollectionComponent.h"
 
 // Sets default values
@@ -27,7 +26,7 @@ ABreakableActor::ABreakableActor()
 	
 }
 
-void ABreakableActor::GetHit_Implementation(const FVector& ImpactPoint)
+void ABreakableActor::GetHit_Implementation(const FVector& ImpactPoint, AActor* SourceActor)
 {
 	
 }

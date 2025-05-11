@@ -18,63 +18,83 @@ class USoundBase;
 class UParticleSystem;
 
 UCLASS()
-class SLASH_API AEnemy : public ACharacterBase, public IHitInterfaces
+class SLASH_API AEnemy : public ACharacterBase
 {
 	GENERATED_BODY()
 
 public:
-	// Sets default values for this character's properties
 	AEnemy();
 
-	void CheckPatrolTarget();
-	
-	void CheckCombatTarget();
-
-	UPROPERTY()
-	TObjectPtr<AAIController> EnemyController;
-
-	// Called every frame
+	/**<AActor>*/
 	virtual void Tick(float DeltaTime) override;
-	// Called to bind functionality to input
-	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
-	virtual void GetHit_Implementation(const FVector& ImpactPoint) override;
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
 	virtual void Destroyed() override;
 
+	/**<IHit Interface>*/
+	virtual void GetHit_Implementation(const FVector& ImpactPoint, AActor* SourceActor) override;
+
+	// Called to bind functionality to input
+	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	
-	
+	virtual void HandleDamage(float DamageAmount) override;
+
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 	
-
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
-	TObjectPtr<UHealthBarComponent> HealthBarComponent;
-
 	bool InTargetRange(AActor* Target, float Range);
 
 	void MoveToTarget(AActor* Target);
+	void SpawnSoul();
+	void SpawnGold();
 	AActor* ChoosePatrolTarget();
 
-	void Die();
-
+	virtual void Die() override;
 	virtual void Attack() override;
-	virtual void PlayAttackMontage() override;
+	virtual bool CanAttack() override;
+	virtual void AttackEnd() override;
 
 	UFUNCTION()
 	void OnSeen(APawn* InPawn);
 
+	UPROPERTY(BlueprintReadOnly)
+	EEnemyState EnemyState = EEnemyState::EES_Patrolling;
+
+	
+
 private:
- 
-	/**
-	* Animation montages
-	*/
+	/**AI Behavior*/
+	void CheckPatrolTarget();
+	void CheckCombatTarget();
+	void HideHealthBar();
+	void ShowHealthBar();
+	void LoseInterest();
+	void StartPatrolling();
+	void ChaseTarget();
+	bool IsOutSideCombatRadius();
+	bool IsOutSideAttackRadius();
+	bool IsInSideAttackRadius();
+	bool IsChasing();
+	bool IsAttacking();
+	bool IsDead();
+	bool IsEngaged();
+	/** 战斗 */
+	void StartAttackTimer();
+	void ClearAttackTimer();
+	void EndPatrolTimer();
+	void PatrolTimerFinished();
 
-	UPROPERTY(EditDefaultsOnly, Category = Montages)
-	UAnimMontage* DeathMontage;
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UHealthBarComponent> HealthBarComponent;
 
-	UPROPERTY(EditAnywhere, Category = Sound)
-	USoundBase* HitSound;
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<USphereComponent> CombatSphere;
+
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<USphereComponent> AttackSphere;
+
+	UPROPERTY(VisibleAnywhere)
+	TObjectPtr<UPawnSensingComponent> PawnSensingComponent;
 
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class AWeapon> WeaponClassR;
@@ -82,43 +102,55 @@ private:
 	UPROPERTY(EditAnywhere)
 	TSubclassOf<class AWeapon> WeaponClassL;
 
-	UPROPERTY(EditAnywhere, Category = VisualEffects)
-	UParticleSystem* HitParticles;
-
-	UPROPERTY(EditAnywhere, Category = VisualEffects)
-	UParticleSystem* CombatParticle;
-	
-	UPROPERTY()
-	AActor* CombatTarget;
-	
-	// Current patrol target
 	UPROPERTY(EditInstanceOnly, Category = "AI Navigation")
 	AActor* PatrolTarget;
  
 	UPROPERTY(EditInstanceOnly, Category = "AI Navigation")
 	TArray<AActor*> PatrolTargets;
-
-	UPROPERTY(EditAnywhere)
-	float PatrolRadius = 200.f;
-
-	UPROPERTY(EditAnywhere)
-	float AttackRadius = 175.f;
-
+	
+	FTimerHandle AttackTimer;
 	FTimerHandle PatrolTimer;
 	
-	void PatrolTimerFinished();
- 
-	UPROPERTY(EditAnywhere, Category = "AI Navigation")
-	float WaitMin = 0.f;
- 
-	UPROPERTY(EditAnywhere, Category = "AI Navigation")
-	float WaitMax = 3.f;
+	UPROPERTY(EditAnywhere, Category = VisualEffects)
+	UParticleSystem* CombatParticle;
 
-	UPROPERTY(VisibleAnywhere)
-	TObjectPtr<UPawnSensingComponent> PawnSensingComponent;
+	UPROPERTY(EditAnywhere)
+	float CombatRadius = 700.f;
 
-	EEnemyState EnemyState = EEnemyState::EES_Patrolling;
+	UPROPERTY(EditAnywhere)
+	float PatrolAcceptRadius = 15.f;
+
+	UPROPERTY(EditAnywhere)
+	float AttackRadius = 150.f;
+
+	UPROPERTY()
+	TObjectPtr<AAIController> EnemyController;
+
+	UPROPERTY(EditAnywhere, Category="Combat")
+	float AttackMin = 0.5;
 	
+	UPROPERTY(EditAnywhere, Category="Combat")
+	float AttackMax = 1.2;
+
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	float PatrollingSpeed = 135.f;
+
+	UPROPERTY(EditAnywhere, Category = "Combat")
+	float ChasingSpeed = 440.f;
+
+	UPROPERTY(EditAnywhere, Category = "AI Navigation")
+	float PatrolWaitMin = 0.f;
+ 
+	UPROPERTY(EditAnywhere, Category = "AI Navigation")
+	float PatrolWaitMax = 3.f;
+
+	UPROPERTY(EditDefaultsOnly, Category="Pickups")
+	TSubclassOf<class ASoul> SoulClass;
+
+	UPROPERTY(EditDefaultsOnly, Category="Pickups")
+	TSubclassOf<class AGold> GoldClass;
 };
+
+
 
 

@@ -24,5 +24,7 @@ class SLASH_API IHitInterfaces
 public:
 	
 	UFUNCTION(BlueprintNativeEvent, BlueprintCallable)
-	void GetHit(const FVector& ImpactPoint);
+	void GetHit(const FVector& ImpactPoint, AActor* SourceActor);
+
+	
 };

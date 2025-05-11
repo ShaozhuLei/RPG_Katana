@@ -33,8 +33,6 @@ public:
 
 	FORCEINLINE void SetItemOwner(AActor* ItenOwner){ItemOwner = ItenOwner;}
 
-	
-
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;

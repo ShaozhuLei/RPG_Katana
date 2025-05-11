@@ -21,7 +21,4 @@ public:
 
 	UPROPERTY(BlueprintReadOnly)
 	TObjectPtr<UHealthBar> HealthBarClass;
-	
-	
-	
 };

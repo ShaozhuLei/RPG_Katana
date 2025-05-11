@@ -19,7 +19,7 @@ public:
 	// Sets default values for this actor's properties
 	ABreakableActor();
 
-	virtual void GetHit_Implementation(const FVector& ImpactPoint) override;
+	virtual void GetHit_Implementation(const FVector& ImpactPoint, AActor* SourceActor) override;
 
 protected:
 	// Called when the game starts or when spawned

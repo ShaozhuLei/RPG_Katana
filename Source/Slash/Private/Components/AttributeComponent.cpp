@@ -36,7 +36,7 @@ void UAttributeComponent::TickComponent(float DeltaTime, ELevelTick TickType, FA
 void UAttributeComponent::ReceiveDamage(float DamageAmount)
 {
 	Health -= DamageAmount;
-	Health = FMath::Clamp(Health, 0.f, 100.f);
+	Health = FMath::Clamp(Health, 0.f, MaxHealth);
 }
 
 float UAttributeComponent::ReturnPercentageHealth()
@@ -47,5 +47,15 @@ float UAttributeComponent::ReturnPercentageHealth()
 bool UAttributeComponent::bIsAlive()
 {
 	return Health > 0.f;
+}
+
+void UAttributeComponent::AddSouls(int32 NumberOfSouls)
+{
+	Souls += NumberOfSouls;
+}
+
+void UAttributeComponent::AddGold(int32 AmountOfGold)
+{
+	Gold += AmountOfGold;
 }
 
