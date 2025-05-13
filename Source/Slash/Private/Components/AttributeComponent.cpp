@@ -39,9 +39,25 @@ void UAttributeComponent::ReceiveDamage(float DamageAmount)
 	Health = FMath::Clamp(Health, 0.f, MaxHealth);
 }
 
+void UAttributeComponent::UseStamina(float StaminaCost)
+{
+	Stamina -= StaminaCost;
+	Stamina = FMath::Clamp(Stamina, 0.f, MaxStamina);
+}
+
+void UAttributeComponent::RegenStamina(float DelataTime)
+{
+	Stamina = FMath::Clamp(Stamina += DelataTime * RegenerationRate, 0.f, MaxStamina);
+}
+
 float UAttributeComponent::ReturnPercentageHealth()
 {
 	return Health / MaxHealth;
+}
+
+float UAttributeComponent::GetPercentageStamina()
+{
+	return Stamina / MaxStamina;
 }
 
 bool UAttributeComponent::bIsAlive()

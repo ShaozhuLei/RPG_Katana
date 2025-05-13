@@ -27,7 +27,10 @@ public:
 protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
-	virtual void Die();
+
+	UFUNCTION(BlueprintNativeEvent)
+	void Die();
+	
 	virtual void Attack();
 	virtual bool CanAttack();
 	virtual bool bIsAlive();

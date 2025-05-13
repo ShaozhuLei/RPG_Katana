@@ -24,7 +24,7 @@ void ACharacterBase::BeginPlay()
 	Super::BeginPlay();
 }
 
-void ACharacterBase::Die()
+void ACharacterBase::Die_Implementation()
 {
 	Tags.Add(FName("Dead"));
 }
@@ -75,7 +75,7 @@ void ACharacterBase::DirectionalHitReact(const FVector& ImpactPoint, AActor* Sou
 	{
 		MontageSection = "HitBack";
 	}
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Cyan, FString::Printf(TEXT("%s"), *MontageSection.ToString()));
+	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Cyan, TEXT("GetHit"));
 	PlayHitReactMontage(MontageSection);
 }
 

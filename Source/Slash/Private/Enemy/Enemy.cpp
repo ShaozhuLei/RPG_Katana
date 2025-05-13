@@ -79,6 +79,24 @@ void AEnemy::BeginPlay()
 	AttackRadius = AttackSphere->GetScaledSphereRadius();
 }
 
+// Called every frame
+void AEnemy::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+	
+	//时刻检查此时是否在巡逻
+	if (IsDead()) return;
+	
+	if (EnemyState > EEnemyState::EES_Patrolling)
+	{
+		CheckCombatTarget();
+	}
+	else
+	{
+		CheckPatrolTarget();
+	}
+}
+
 bool AEnemy::CanAttack()
 {
 	bool bCanAttack = IsInSideAttackRadius() && !IsAttacking() && !IsDead() && !IsEngaged();
@@ -121,8 +139,9 @@ void AEnemy::CheckCombatTarget()
 bool AEnemy::InTargetRange(AActor* Target, float Range)
 {
 	if (Target == nullptr) return false;
+	
 	const float DistanceToTarget = (Target->GetActorLocation() - GetActorLocation()).Size();
-
+	
 	return DistanceToTarget <= Range;
 }
 
@@ -131,7 +150,7 @@ void AEnemy::MoveToTarget(AActor* Target)
 	if (EnemyController == nullptr || Target == nullptr) return;
 	FAIMoveRequest MoveRequest;
 	MoveRequest.SetGoalActor(Target);
-	MoveRequest.SetAcceptanceRadius(15.f);
+	MoveRequest.SetAcceptanceRadius(MoveAcceptanceRadius);
 	EnemyController->MoveTo(MoveRequest);
 }
 
@@ -173,7 +192,7 @@ AActor* AEnemy::ChoosePatrolTarget()
 	return nullptr;
 }
 
-void AEnemy::Die()
+void AEnemy::Die_Implementation()
 {
 	//移除对刀的Box碰撞
 	EnemyState = EEnemyState::EES_Dead;
@@ -345,26 +364,6 @@ void AEnemy::EndPatrolTimer()
 	GetWorldTimerManager().ClearTimer(PatrolTimer);
 }
 
-// Called every frame
-void AEnemy::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-	
-	//时刻检查此时是否在巡逻
-	if (IsDead()) return;
-	
-	if (EnemyState > EEnemyState::EES_Patrolling)
-	{
-		CheckCombatTarget();
-	}
-	else
-	{
-		CheckPatrolTarget();
-	}
-	
-	
-	
-}
 
 // Called to bind functionality to input
 void AEnemy::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)

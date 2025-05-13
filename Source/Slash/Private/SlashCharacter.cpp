@@ -22,7 +22,7 @@
 ASlashCharacter::ASlashCharacter()
 {
  	// Set this character to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
-	PrimaryActorTick.bCanEverTick = false;
+	PrimaryActorTick.bCanEverTick = true;
 
 	CameraBoom = CreateDefaultSubobject<USpringArmComponent>(TEXT("CameraBoom"));
 	CameraBoom->SetupAttachment(GetRootComponent());
@@ -37,6 +37,16 @@ ASlashCharacter::ASlashCharacter()
 	ViewCamera = CreateDefaultSubobject<UCameraComponent>(TEXT("ViewCamera"));
 	ViewCamera->SetupAttachment(CameraBoom);
 	
+}
+
+void ASlashCharacter::Tick(float DeltaSeconds)
+{
+	Super::Tick(DeltaSeconds);
+	if (AttributeComponent && SlashOverlay)
+	{
+		AttributeComponent->RegenStamina(DeltaSeconds);
+		SlashOverlay->SetStaminaBarPercent(AttributeComponent->GetPercentageStamina());
+	}
 }
 
 void ASlashCharacter::GetHit_Implementation(const FVector& ImpactPoint, AActor* SourceActor)
@@ -106,11 +116,29 @@ void ASlashCharacter::Look(const FInputActionValue& InputActionValue)
 	AddControllerYawInput(LookDirection.X);
 }
 
-void ASlashCharacter::Dodge(const FInputActionValue& InputActionValue)
+bool ASlashCharacter::IsOccupied()
 {
-	if (ActionState != EActionState::EAS_Unoccupied) return;
-	PlayDodgeMontage();
-	ActionState = EActionState::EAS_Dodge;
+	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Cyan, FString::Printf(TEXT("IsEnough: %d"), ActionState));
+	return ActionState != EActionState::EAS_Unoccupied;
+}
+
+bool ASlashCharacter::HasEnoughStamina()
+{
+	return AttributeComponent->GetStamina() > AttributeComponent->GetRollCost();;
+}
+
+void ASlashCharacter::Roll(const FInputActionValue& InputActionValue)
+{
+	if (IsOccupied() || !HasEnoughStamina()) return;
+
+	if (AttributeComponent && HasEnoughStamina())
+	{
+		PlayDodgeMontage();
+		ActionState = EActionState::EAS_Dodge;
+		AttributeComponent->UseStamina(AttributeComponent->GetRollCost());
+		SlashOverlay->SetStaminaBarPercent(AttributeComponent->GetPercentageStamina());
+	}
+	
 }
 
 //按"E" 键执行函数
@@ -157,7 +185,7 @@ void ASlashCharacter::Attack()
 	}
 }
 
-void ASlashCharacter::Die()
+void ASlashCharacter::Die_Implementation()
 {
 	Tags.Add(FName("Dead"));
 	ActionState = EActionState::EAS_Dead;
@@ -290,7 +318,7 @@ void ASlashCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 		EnhancedInputComponent->BindAction(EKeyPressed, ETriggerEvent::Started, this, &ASlashCharacter::PickWeapon);
 		EnhancedInputComponent->BindAction(FKeyHoldWeapon, ETriggerEvent::Started, this, &ASlashCharacter::HoldWeapon);
 		EnhancedInputComponent->BindAction(BaseAttack, ETriggerEvent::Started, this, &ASlashCharacter::Attack);
-		EnhancedInputComponent->BindAction(DodgeAction, ETriggerEvent::Started, this, &ASlashCharacter::Dodge);
+		EnhancedInputComponent->BindAction(DodgeAction, ETriggerEvent::Started, this, &ASlashCharacter::Roll);
 	}
 
 }

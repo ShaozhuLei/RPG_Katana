@@ -26,6 +26,8 @@ public:
 	// Sets default values for this character's properties
 	ASlashCharacter();
 
+	virtual void Tick(float DeltaSeconds) override;
+
 	virtual void GetHit_Implementation(const FVector& ImpactPoint, AActor* SourceActor) override;
 	
 	virtual float TakeDamage(float DamageAmount, struct FDamageEvent const& DamageEvent, class AController* EventInstigator, AActor* DamageCauser) override;
@@ -56,11 +58,13 @@ public:
 	
 	void Move(const FInputActionValue& InputActionValue);
 	void Look(const FInputActionValue& InputActionValue);
-	void Dodge(const FInputActionValue& InputActionValue);
+	bool IsOccupied();
+	bool HasEnoughStamina();
+	void Roll(const FInputActionValue& InputActionValue);
 	void PickWeapon();
 	void HoldWeapon();
 	virtual void Attack() override;
-	virtual void Die() override;
+	virtual void Die_Implementation() override;
 	virtual void Jump() override;
 	virtual void RollStart() override;
 	virtual void RollEnd() override;

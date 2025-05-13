@@ -49,7 +49,7 @@ protected:
 	void SpawnGold();
 	AActor* ChoosePatrolTarget();
 
-	virtual void Die() override;
+	virtual void Die_Implementation() override;
 	virtual void Attack() override;
 	virtual bool CanAttack() override;
 	virtual void AttackEnd() override;
@@ -104,6 +104,9 @@ private:
 
 	UPROPERTY(EditInstanceOnly, Category = "AI Navigation")
 	AActor* PatrolTarget;
+
+	UPROPERTY(EditDefaultsOnly, Category = "AI Navigation")
+	float MoveAcceptanceRadius;
  
 	UPROPERTY(EditInstanceOnly, Category = "AI Navigation")
 	TArray<AActor*> PatrolTargets;
