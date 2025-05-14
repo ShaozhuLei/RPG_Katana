@@ -6,6 +6,7 @@
 #include "Item.h"
 #include "Weapon.generated.h"
 
+enum class EWeaponState : uint8;
 class UBoxComponent;
 /**
  * 
@@ -22,7 +23,9 @@ public:
 	void AttachMeshToSocket(USceneComponent* InParent, FName InSocketName);
 
 	FORCEINLINE UBoxComponent* GetBoxComponent(){return WeaponBox;}
+	FORCEINLINE EWeaponState GetWeaponState()const {return WeaponState;};
 
+	UPROPERTY()
 	TArray<AActor*> IgnoreActors;
 
 protected:
@@ -59,4 +62,7 @@ private:
 
 	UPROPERTY(EditAnywhere, Category="Weapon Damage")
 	float Damage = 50.f;
+
+	UPROPERTY(EditDefaultsOnly, Category="Weapon Properties")
+	EWeaponState WeaponState;
 };

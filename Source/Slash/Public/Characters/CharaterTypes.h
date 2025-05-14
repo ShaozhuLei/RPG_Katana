@@ -30,5 +30,12 @@ enum class EEnemyState : uint8
 	EES_Chasing UMETA(DisplayName = "Chasing"),
 	EES_Attacking UMETA(DisplayName = "Attacking"),
 	EES_Engaged UMETA(DisplayName = "Engaged")
-	
+};
+
+UENUM(Blueprintable)
+enum class EWeaponState : uint8
+{
+	EWS_NoWeapon UMETA(DislayName = "NoWeapon"),
+	EWS_GreateSowrd UMETA(DislayName = "GreatSword"),
+	EWS_DoubleKnives UMETA(DislayName = "DoubleKnives")
 };

@@ -30,6 +30,7 @@ protected:
 
 	UFUNCTION(BlueprintNativeEvent)
 	void Die();
+
 	
 	virtual void Attack();
 	virtual bool CanAttack();

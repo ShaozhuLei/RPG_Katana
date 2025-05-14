@@ -118,7 +118,6 @@ void ASlashCharacter::Look(const FInputActionValue& InputActionValue)
 
 bool ASlashCharacter::IsOccupied()
 {
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Cyan, FString::Printf(TEXT("IsEnough: %d"), ActionState));
 	return ActionState != EActionState::EAS_Unoccupied;
 }
 
@@ -127,6 +126,7 @@ bool ASlashCharacter::HasEnoughStamina()
 	return AttributeComponent->GetStamina() > AttributeComponent->GetRollCost();;
 }
 
+//翻滚
 void ASlashCharacter::Roll(const FInputActionValue& InputActionValue)
 {
 	if (IsOccupied() || !HasEnoughStamina()) return;
@@ -144,15 +144,25 @@ void ASlashCharacter::Roll(const FInputActionValue& InputActionValue)
 //按"E" 键执行函数
 void ASlashCharacter::PickWeapon()
 {
-	AWeapon* OverlappingWeapon = Cast<AWeapon>(OverlappingItem);
-	
-	if (OverlappingWeapon && CharacterState == ECharacterState::ECS_Unequipped)
+	if (OverlappingItem)
 	{
-		OverlappingWeapon->Equip(GetMesh(), FName("Sword_socket"), this, this);
-		OverlappingItem = nullptr;
-		EquippedWeapon = OverlappingWeapon;
-		CharacterState = ECharacterState::ECS_EquippedOnBack;
+		AWeapon* OverlappingWeapon = Cast<AWeapon>(OverlappingItem);
+
+		if (OverlappingWeapon || CharacterState == ECharacterState::ECS_Unequipped || CharacterState == ECharacterState::ECS_EquippedOnBack)
+		{
+			if (EquippedWeapon) EquippedWeapon->Destroy();
+		
+			OverlappingWeapon->Equip(GetMesh(), FName("Sword_socket"), this, this);
+			OverlappingItem = nullptr;
+			EquippedWeapon = OverlappingWeapon;
+			MyCurrentWeapon = EquippedWeapon->GetWeaponState();
+			CharacterState = ECharacterState::ECS_EquippedOnBack;
+		}
 	}
+
+		
+	
+	
 }
 
 //按"F"效果
@@ -180,6 +190,7 @@ void ASlashCharacter::Attack()
 {
 	if (CanAttack())
 	{
+		BeginAttack.Broadcast();
 		PlayAttackMontage();
 		ActionState = EActionState::EAS_Attacking;
 	}

@@ -75,7 +75,6 @@ void ACharacterBase::DirectionalHitReact(const FVector& ImpactPoint, AActor* Sou
 	{
 		MontageSection = "HitBack";
 	}
-	GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Cyan, TEXT("GetHit"));
 	PlayHitReactMontage(MontageSection);
 }
 

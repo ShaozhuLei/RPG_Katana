@@ -10,12 +10,13 @@
 #include "Interfaces/PickupInterface.h"
 #include "SlashCharacter.generated.h"
 
-
 class USlashOverlay;
 class AWeapon;
 class AItem;
 class UCameraComponent;
 class USpringArmComponent;
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FSlashBeginAttack);
 
 UCLASS()
 class SLASH_API ASlashCharacter : public ACharacterBase, public IPickupInterface
@@ -25,6 +26,10 @@ class SLASH_API ASlashCharacter : public ACharacterBase, public IPickupInterface
 public:
 	// Sets default values for this character's properties
 	ASlashCharacter();
+
+	/**Delegates*/
+	UPROPERTY(BlueprintAssignable)
+	FSlashBeginAttack BeginAttack;
 
 	virtual void Tick(float DeltaSeconds) override;
 
@@ -79,7 +84,6 @@ public:
 	
 	FORCEINLINE ECharacterState GetCharacterState() const { return CharacterState; }
 	FORCEINLINE EActionState GetActionState() const { return ActionState; }
-	
 
 protected:
 	// Called when the game starts or when spawned
@@ -131,6 +135,8 @@ private:
 
 	UPROPERTY(BlueprintReadOnly, meta = (AllowPrivateAccess = true))
 	EActionState ActionState = EActionState::EAS_Unoccupied;
+
+	EWeaponState MyCurrentWeapon = EWeaponState::EWS_NoWeapon;
 
 };
 
